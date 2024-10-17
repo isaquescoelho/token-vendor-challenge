@@ -29,7 +29,14 @@ contract BlockfulToken {
         return true;
     }
 
-    function approve(address spender, uint256 amount) public {
-        // Implement approve logic
+    function approve(address spender, uint256 amount) public returns (bool) {
+        require(spender != address(0), "Approve to the zero address");
+
+        allowance[msg.sender][spender] = amount;
+
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
     }
 }
