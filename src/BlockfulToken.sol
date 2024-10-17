@@ -18,8 +18,15 @@ contract BlockfulToken {
         balanceOf[msg.sender] = initialSupply;
     }
 
-    function balanceOf(address account) public view returns (uint256) {
-        // Implement balanceOf logic
+    function transfer(address to, uint256 amount) public returns (bool) {
+        require(to != address(0), "Transfer to the zero address");
+        require(balanceOf[msg.sender] >= amount, "Insufficient balance");
+
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
+
+        emit Transfer(msg.sender, to, amount);
+        return true;
     }
 
     function approve(address spender, uint256 amount) public {
