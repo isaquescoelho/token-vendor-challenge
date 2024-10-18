@@ -70,4 +70,15 @@ contract TokenVendor {
         emit TokensSold(msg.sender, tokenAmount, ethAmount);
     }
 
+    // Function for the owner to withdraw ETH from the contract
+    function withdraw() public onlyOwner {
+        uint256 contractBalance = address(this).balance;
+        require(contractBalance > 0, "No ETH to withdraw");
+
+        (bool success, ) = payable(owner).call{value: contractBalance}("");
+        require(success, "Failed to withdraw ETH");
+
+        emit EthWithdrawn(owner, contractBalance);
+    }
+
 }
