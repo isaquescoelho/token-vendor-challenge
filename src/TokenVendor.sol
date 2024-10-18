@@ -50,7 +50,24 @@ contract TokenVendor {
         emit TokensPurchased(msg.sender, msg.value, amountToBuy);
     }
 
+    // Function to sell tokens back to the contract
+    function sellTokens(uint256 tokenAmount) public {
+        require(tokenAmount > 0, "You need to sell at least some tokens");
+
+        uint256 userBalance = token.balanceOf(msg.sender);
+        require(userBalance >= tokenAmount, "Insufficient token balance");
+
+        // Calculate the amount of ETH to send to the user, dividing first to avoid overflow
+        uint256 ethAmount = (tokenAmount / 1e18) * tokenPrice;
+        require(ethAmount <= address(this).balance, "Vendor has not enough ETH");
+
+        bool sent = token.transferFrom(msg.sender, address(this), tokenAmount);
+        require(sent, "Failed to transfer tokens from user to vendor");
+
+        (bool success, ) = payable(msg.sender).call{value: ethAmount}("");
+        require(success, "Failed to send ETH to the user");
+
+        emit TokensSold(msg.sender, tokenAmount, ethAmount);
     }
 
-    // Add any additional functions here
 }
