@@ -2,7 +2,6 @@
 pragma solidity ^0.8.25;
 
 import { Test } from "forge-std/Test.sol";
-
 import { TokenVendor } from "../src/TokenVendor.sol";
 import { BlockfulToken } from "../src/BlockfulToken.sol";
 
@@ -71,12 +70,10 @@ contract TokenVendorTest is Test {
     function testWithdraw() public {
         uint256 ethAmount = 1 ether;
 
-        // First, buy some tokens to add ETH to the vendor
         vm.deal(user1, ethAmount);
         vm.prank(user1);
         vendor.buyTokens{ value: ethAmount }();
 
-        // Withdraw ETH
         uint256 initialBalance = owner.balance;
         vendor.withdraw();
 
@@ -133,6 +130,88 @@ contract TokenVendorTest is Test {
         // Owner withdraws ETH from vendor
         vendor.withdraw();
     }
+
+    function testBuyAndSellTokens() public {
+        uint256 ethAmount = 1 ether;
+        uint256 expectedTokens = (ethAmount * 1e18) / TOKEN_PRICE;
+
+        // Usuário compra tokens
+        vm.deal(user1, ethAmount);
+        vm.startPrank(user1);
+        vendor.buyTokens{ value: ethAmount }();
+
+        assertEq(token.balanceOf(user1), expectedTokens);
+
+        // Usuário vende tokens
+        token.approve(address(vendor), expectedTokens);
+        vendor.sellTokens(expectedTokens);
+
+        assertEq(token.balanceOf(user1), 0);
+        assertEq(user1.balance, ethAmount);
+    }
+
+    function testHighGasUsage() public {
+        uint256 ethAmount = 1 ether;
+        vm.deal(user1, ethAmount);
+        vm.startPrank(user1);
+
+        // Comprar tokens usando uma quantidade alta de gás
+        vendor.buyTokens{ value: ethAmount, gas: 5000000 }();
+    }
+
+
+    function testMultipleUsersBuying() public {
+        for (uint i = 1; i <= 10; i++) {
+            address user = address(uint160(i));
+            vm.deal(user, 1 ether);
+            vm.startPrank(user);
+            vendor.buyTokens{ value: 1 ether }();
+            vm.stopPrank();
+        }
+    }
+
+    function testMaximumETHBuy() public {
+        uint256 maxETH = type(uint256).max; // O valor máximo de uint256
+        vm.deal(user1, maxETH);
+        vm.startPrank(user1);
+
+        // Não esperamos um revert aqui, mas é bom verificar se a quantidade calculada é razoável
+        vendor.buyTokens{ value: maxETH }();
+    }
+
+    function testOnlyOwnerSetTokenPrice() public {
+        vm.prank(user1); // Impersona um usuário que não é o proprietário
+        vm.expectRevert("Only owner can call this function");
+        vendor.setTokenPrice(2e16); // Tenta alterar o preço dos tokens
+    }
+
+    function testOnlyOwnerWithdraw() public {
+        vm.prank(user1); // Impersona um usuário que não é o proprietário
+        vm.expectRevert("Only owner can call this function");
+        vendor.withdraw(); // Tenta fazer o saque
+    }
+
+    function testZeroTokenTransfer() public {
+        vm.deal(user1, 1 ether);
+        vm.startPrank(user1);
+        vm.expectRevert("You need to send ETH to buy tokens");
+        vendor.buyTokens{ value: 0 }();
+        vm.stopPrank();
+    }
+
+    function testZeroTokenSell() public {
+        vm.prank(user1);
+        vm.expectRevert("You need to sell at least some tokens");
+        vendor.sellTokens(0);
+    }
+
+    function testWithdrawWithoutBalance() public {
+        vm.expectRevert("No ETH to withdraw");
         vendor.withdraw();
     }
+
+    // Define the events used in the tests
+    event TokensPurchased(address buyer, uint256 amountOfETH, uint256 amountOfTokens);
+    event TokensSold(address seller, uint256 amountOfTokens, uint256 amountOfETH);
+    event EthWithdrawn(address owner, uint256 amount);
 }
