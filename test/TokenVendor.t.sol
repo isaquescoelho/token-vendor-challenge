@@ -26,16 +26,19 @@ contract TokenVendorTest is Test {
     }
 
     function testBuyTokens() public {
-        uint256 ethAmount = 1 ether;
-        uint256 expectedTokens = ethAmount * TOKEN_PRICE;
+        uint256 ethAmount = 1 ether; // User sends 1 ETH
+        uint256 expectedTokens = (ethAmount * 1e18) / TOKEN_PRICE; // Should receive 100 tokens (with decimals)
 
-        // Add ETH to the user
+        // Fund user1 with ETH
         vm.deal(user1, ethAmount);
-        // Impersonate the user
+
+        // User1 buys tokens
         vm.prank(user1);
         vendor.buyTokens{ value: ethAmount }();
 
+        // Check user1's token balance
         assertEq(token.balanceOf(user1), expectedTokens);
+        // Check vendor's ETH balance
         assertEq(address(vendor).balance, ethAmount);
     }
 
