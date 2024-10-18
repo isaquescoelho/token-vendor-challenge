@@ -86,46 +86,53 @@ contract TokenVendorTest is Test {
 
     function testBuyTokensEvent() public {
         uint256 ethAmount = 1 ether;
-        uint256 expectedTokens = ethAmount * TOKEN_PRICE;
+        uint256 expectedTokens = (ethAmount * 1e18) / TOKEN_PRICE;
 
         vm.deal(user1, ethAmount);
         vm.prank(user1);
 
-        vm.expectEmit(true, false, false, true);
-        emit TokenVendor.TokensPurchased(user1, ethAmount, expectedTokens);
+        vm.expectEmit(true, true, false, true);
+        emit TokensPurchased(user1, ethAmount, expectedTokens);
+
         vendor.buyTokens{ value: ethAmount }();
     }
 
     function testSellTokensEvent() public {
-        uint256 tokenAmount = 100 * 10 ** 18;
-        uint256 expectedEth = tokenAmount / TOKEN_PRICE;
+        uint256 tokenAmount = 100 * 1e18;
+        uint256 expectedEth = (tokenAmount * TOKEN_PRICE) / 1e18;
 
-        // First, buy some tokens
-        vm.deal(user1, 1 ether);
+        vm.deal(user1, expectedEth);
         vm.startPrank(user1);
-        vendor.buyTokens{ value: 1 ether }();
+
+        vendor.buyTokens{ value: expectedEth }();
 
         // Approve vendor to spend tokens
         token.approve(address(vendor), tokenAmount);
 
-        // Sell tokens
-        vm.expectEmit(true, false, false, true);
-        emit TokenVendor.TokensSold(user1, tokenAmount, expectedEth);
+        // Expect the TokensSold event
+        vm.expectEmit(true, true, false, true);
+        emit TokensSold(user1, tokenAmount, expectedEth);
+
         vendor.sellTokens(tokenAmount);
+
         vm.stopPrank();
     }
 
     function testWithdrawEvent() public {
         uint256 ethAmount = 1 ether;
 
-        // First, buy some tokens to add ETH to the vendor
+        // User1 buys tokens to add ETH to vendor
         vm.deal(user1, ethAmount);
         vm.prank(user1);
         vendor.buyTokens{ value: ethAmount }();
 
-        // Withdraw ETH
-        vm.expectEmit(true, false, false, true);
-        emit TokenVendor.EthWithdrawn(owner, ethAmount);
+        // Expect the EthWithdrawn event
+        vm.expectEmit(true, true, false, true);
+        emit EthWithdrawn(owner, ethAmount);
+
+        // Owner withdraws ETH from vendor
+        vendor.withdraw();
+    }
         vendor.withdraw();
     }
 }
