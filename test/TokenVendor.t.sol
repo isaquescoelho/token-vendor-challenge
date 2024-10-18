@@ -11,8 +11,11 @@ contract TokenVendorTest is Test {
     BlockfulToken public token;
     address public owner;
     address public user1;
-    uint256 public constant INITIAL_SUPPLY = 1_000_000 * 10 ** 18;
-    uint256 public constant TOKEN_PRICE = 100; // 1 ETH = 100 tokens
+
+    uint256 public constant INITIAL_SUPPLY = 1_000_000 * 1e18;
+    uint256 public constant TOKEN_PRICE = 1e16; // Price per token in wei (0.01 ETH per token)
+
+    receive() external payable {}
 
     function setUp() public {
         owner = address(this);
