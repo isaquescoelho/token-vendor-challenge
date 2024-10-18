@@ -81,4 +81,9 @@ contract TokenVendor {
         emit EthWithdrawn(owner, contractBalance);
     }
 
+    // Function for the owner to adjust the token price
+    function setTokenPrice(uint256 _newPrice) public onlyOwner {
+        require(_newPrice > 0, "Price must be greater than zero");
+        tokenPrice = _newPrice;
+    }
 }
